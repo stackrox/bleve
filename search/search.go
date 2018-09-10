@@ -156,7 +156,14 @@ type DocumentMatch struct {
 	// Fields contains the values for document fields listed in
 	// SearchRequest.Fields. Text fields are returned as strings, numeric
 	// fields as float64s and date fields as time.RFC3339 formatted strings.
+	// If there is more than one value for a field,
+	// Fields will return a []interface{}, and the client will have to cast each
+	// value in that slice individually to string or float64 individually.
 	Fields map[string]interface{} `json:"fields,omitempty"`
+
+	// FieldArrayPositions is a companion map to Fields which returns the array positions
+	// corresponding to each element in Fields.
+	FieldArrayPositions map[string][]ArrayPositions
 
 	// used to maintain natural index order
 	HitNumber uint64 `json:"-"`
@@ -168,10 +175,15 @@ type DocumentMatch struct {
 	FieldTermLocations []FieldTermLocation `json:"-"`
 }
 
-func (dm *DocumentMatch) AddFieldValue(name string, value interface{}) {
+func (dm *DocumentMatch) AddFieldValue(name string, value interface{}, arrayPositions ArrayPositions) {
 	if dm.Fields == nil {
 		dm.Fields = make(map[string]interface{})
 	}
+	if dm.FieldArrayPositions == nil {
+		dm.FieldArrayPositions = make(map[string][]ArrayPositions)
+	}
+	dm.FieldArrayPositions[name] = append(dm.FieldArrayPositions[name], arrayPositions)
+
 	existingVal, ok := dm.Fields[name]
 	if !ok {
 		dm.Fields[name] = value

@@ -644,7 +644,7 @@ func LoadAndHighlightFields(hit *search.DocumentMatch, req *SearchRequest,
 							}
 
 							if value != nil {
-								hit.AddFieldValue(docF.Name(), value)
+								hit.AddFieldValue(docF.Name(), value, docF.ArrayPositions())
 							}
 						}
 					})
