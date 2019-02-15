@@ -324,7 +324,7 @@ func (dm *DocumentMapping) defaultAnalyzerName(path []string) string {
 }
 
 type keypair struct {
-	Key   string      `json:"key"`
+	Key string 		  `json:"key"`
 	Value interface{} `json:"value"`
 }
 
