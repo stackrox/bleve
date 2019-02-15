@@ -323,6 +323,11 @@ func (dm *DocumentMapping) defaultAnalyzerName(path []string) string {
 	return rv
 }
 
+type keypair struct {
+	Key string 		  `json:"key"`
+	Value interface{} `json:"value"`
+}
+
 func (dm *DocumentMapping) walkDocument(data interface{}, path []string, indexes []uint64, context *walkContext) {
 	// allow default "json" tag to be overridden
 	structTagKey := dm.StructTagKey
@@ -339,13 +344,13 @@ func (dm *DocumentMapping) walkDocument(data interface{}, path []string, indexes
 	switch typ.Kind() {
 	case reflect.Map:
 		// FIXME can add support for other map keys in the future
+		keypairs := make([]keypair, 0, len(val.MapKeys()))
 		if typ.Key().Kind() == reflect.String {
 			for _, key := range val.MapKeys() {
-				fieldName := key.String()
-				fieldVal := val.MapIndex(key).Interface()
-				dm.processProperty(fieldVal, append(path, fieldName), indexes, context)
+				keypairs = append(keypairs, keypair{Key: key.String(), Value: val.MapIndex(key).Interface()})
 			}
 		}
+		dm.processProperty(keypairs, append(path, "keypair"), indexes, context)
 	case reflect.Struct:
 		for i := 0; i < val.NumField(); i++ {
 			field := typ.Field(i)
