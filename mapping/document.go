@@ -324,7 +324,7 @@ func (dm *DocumentMapping) defaultAnalyzerName(path []string) string {
 }
 
 type keypair struct {
-	Key string 		  `json:"key"`
+	Key   string      `json:"key"`
 	Value interface{} `json:"value"`
 }
 
@@ -406,6 +406,10 @@ func (dm *DocumentMapping) walkDocument(data interface{}, path []string, indexes
 
 }
 
+func shouldStopEarly(path []string, subDocMapping, closestDocMapping *DocumentMapping) bool {
+	return len(path) != 0 && subDocMapping == nil && !closestDocMapping.Dynamic
+}
+
 func (dm *DocumentMapping) processProperty(property interface{}, path []string, indexes []uint64, context *walkContext) {
 	pathString := encodePath(path)
 	// look to see if there is a mapping for this field
@@ -422,6 +426,7 @@ func (dm *DocumentMapping) processProperty(property interface{}, path []string, 
 		// cannot do anything with the zero value
 		return
 	}
+
 	propertyType := propertyValue.Type()
 	switch propertyType.Kind() {
 	case reflect.String:
@@ -515,6 +520,9 @@ func (dm *DocumentMapping) processProperty(property interface{}, path []string, 
 					}
 				}
 			}
+			if shouldStopEarly(path, subDocMapping, closestDocMapping) {
+				return
+			}
 			dm.walkDocument(property, path, indexes, context)
 		}
 	case reflect.Map, reflect.Slice:
@@ -524,6 +532,9 @@ func (dm *DocumentMapping) processProperty(property interface{}, path []string, 
 					fieldMapping.processGeoPoint(property, pathString, path, indexes, context)
 				}
 			}
+		}
+		if shouldStopEarly(path, subDocMapping, closestDocMapping) {
+			return
 		}
 		dm.walkDocument(property, path, indexes, context)
 	case reflect.Ptr:
@@ -552,6 +563,9 @@ func (dm *DocumentMapping) processProperty(property interface{}, path []string, 
 				}
 				dm.walkDocument(property, path, indexes, context)
 			default:
+				if shouldStopEarly(path, subDocMapping, closestDocMapping) {
+					return
+				}
 				dm.walkDocument(property, path, indexes, context)
 			}
 		}
