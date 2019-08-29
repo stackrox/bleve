@@ -16,6 +16,8 @@ package index
 
 import (
 	"reflect"
+	"sync"
+	"sync/atomic"
 
 	"github.com/blevesearch/bleve/analysis"
 	"github.com/blevesearch/bleve/document"
@@ -75,14 +77,26 @@ func NewAnalysisWork(i Index, d *document.Document, rc chan *AnalysisResult) *An
 type AnalysisQueue struct {
 	queue chan *AnalysisWork
 	done  chan struct{}
+
+	startWorkersOnce sync.Once
+	numWorkers       int
+
+	closeOnce sync.Once
+}
+
+func (q *AnalysisQueue) startWorkers() {
+	for i := 0; i < q.numWorkers; i++ {
+		go AnalysisWorker(*q)
+	}
 }
 
 func (q *AnalysisQueue) Queue(work *AnalysisWork) {
+	q.startWorkersOnce.Do(q.startWorkers)
 	q.queue <- work
 }
 
 func (q *AnalysisQueue) Close() {
-	close(q.done)
+	q.closeOnce.Do(func() { close(q.done) })
 }
 
 func NewAnalysisQueue(numWorkers int) *AnalysisQueue {
