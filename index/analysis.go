@@ -17,7 +17,6 @@ package index
 import (
 	"reflect"
 	"sync"
-	"sync/atomic"
 
 	"github.com/blevesearch/bleve/analysis"
 	"github.com/blevesearch/bleve/document"
