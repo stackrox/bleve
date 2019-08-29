@@ -101,11 +101,9 @@ func (q *AnalysisQueue) Close() {
 
 func NewAnalysisQueue(numWorkers int) *AnalysisQueue {
 	rv := AnalysisQueue{
-		queue: make(chan *AnalysisWork),
-		done:  make(chan struct{}),
-	}
-	for i := 0; i < numWorkers; i++ {
-		go AnalysisWorker(rv)
+		queue:      make(chan *AnalysisWork),
+		done:       make(chan struct{}),
+		numWorkers: numWorkers,
 	}
 	return &rv
 }
