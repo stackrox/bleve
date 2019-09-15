@@ -328,7 +328,7 @@ type keypair struct {
 	Value interface{} `json:"value"`
 }
 
-func (dm *DocumentMapping) walkDocument(data interface{}, path []string, indexes []uint64, context *walkContext) {
+func (dm *DocumentMapping) walkDocument(data interface{}, path []string, indexes []uint64, context *WalkContext) {
 	// allow default "json" tag to be overridden
 	structTagKey := dm.StructTagKey
 	if structTagKey == "" {
@@ -410,7 +410,7 @@ func shouldStopEarly(path []string, subDocMapping, closestDocMapping *DocumentMa
 	return len(path) != 0 && subDocMapping == nil && !closestDocMapping.Dynamic
 }
 
-func (dm *DocumentMapping) ProcessProperty(property interface{}, path []string, indexes []uint64, context *walkContext) {
+func (dm *DocumentMapping) ProcessProperty(property interface{}, path []string, indexes []uint64, context *WalkContext) {
 	pathString := encodePath(path)
 	// look to see if there is a mapping for this field
 	subDocMapping := dm.documentMappingForPath(pathString)
