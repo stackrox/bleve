@@ -350,7 +350,7 @@ func (dm *DocumentMapping) walkDocument(data interface{}, path []string, indexes
 				keypairs = append(keypairs, keypair{Key: key.String(), Value: val.MapIndex(key).Interface()})
 			}
 		}
-		dm.processProperty(keypairs, append(path, "keypair"), indexes, context)
+		dm.ProcessProperty(keypairs, append(path, "keypair"), indexes, context)
 	case reflect.Struct:
 		for i := 0; i < val.NumField(); i++ {
 			field := typ.Field(i)
@@ -377,31 +377,31 @@ func (dm *DocumentMapping) walkDocument(data interface{}, path []string, indexes
 				if fieldName != "" {
 					newpath = append(path, fieldName)
 				}
-				dm.processProperty(fieldVal, newpath, indexes, context)
+				dm.ProcessProperty(fieldVal, newpath, indexes, context)
 			}
 		}
 	case reflect.Slice, reflect.Array:
 		for i := 0; i < val.Len(); i++ {
 			if val.Index(i).CanInterface() {
 				fieldVal := val.Index(i).Interface()
-				dm.processProperty(fieldVal, path, append(indexes, uint64(i)), context)
+				dm.ProcessProperty(fieldVal, path, append(indexes, uint64(i)), context)
 			}
 		}
 	case reflect.Ptr:
 		ptrElem := val.Elem()
 		if ptrElem.IsValid() && ptrElem.CanInterface() {
-			dm.processProperty(ptrElem.Interface(), path, indexes, context)
+			dm.ProcessProperty(ptrElem.Interface(), path, indexes, context)
 		}
 	case reflect.String:
-		dm.processProperty(val.String(), path, indexes, context)
+		dm.ProcessProperty(val.String(), path, indexes, context)
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		dm.processProperty(float64(val.Int()), path, indexes, context)
+		dm.ProcessProperty(float64(val.Int()), path, indexes, context)
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		dm.processProperty(float64(val.Uint()), path, indexes, context)
+		dm.ProcessProperty(float64(val.Uint()), path, indexes, context)
 	case reflect.Float32, reflect.Float64:
-		dm.processProperty(float64(val.Float()), path, indexes, context)
+		dm.ProcessProperty(float64(val.Float()), path, indexes, context)
 	case reflect.Bool:
-		dm.processProperty(val.Bool(), path, indexes, context)
+		dm.ProcessProperty(val.Bool(), path, indexes, context)
 	}
 
 }
@@ -410,7 +410,7 @@ func shouldStopEarly(path []string, subDocMapping, closestDocMapping *DocumentMa
 	return len(path) != 0 && subDocMapping == nil && !closestDocMapping.Dynamic
 }
 
-func (dm *DocumentMapping) processProperty(property interface{}, path []string, indexes []uint64, context *walkContext) {
+func (dm *DocumentMapping) ProcessProperty(property interface{}, path []string, indexes []uint64, context *walkContext) {
 	pathString := encodePath(path)
 	// look to see if there is a mapping for this field
 	subDocMapping := dm.documentMappingForPath(pathString)
@@ -459,10 +459,10 @@ func (dm *DocumentMapping) processProperty(property interface{}, path []string, 
 			}
 		}
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		dm.processProperty(float64(propertyValue.Int()), path, indexes, context)
+		dm.ProcessProperty(float64(propertyValue.Int()), path, indexes, context)
 		return
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		dm.processProperty(float64(propertyValue.Uint()), path, indexes, context)
+		dm.ProcessProperty(float64(propertyValue.Uint()), path, indexes, context)
 		return
 	case reflect.Float64, reflect.Float32:
 		propertyValFloat := propertyValue.Float()
