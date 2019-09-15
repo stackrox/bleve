@@ -167,7 +167,7 @@ func (fm *FieldMapping) Options() document.IndexingOptions {
 	return rv
 }
 
-func (fm *FieldMapping) processString(propertyValueString string, pathString string, path []string, indexes []uint64, context *walkContext) {
+func (fm *FieldMapping) ProcessString(propertyValueString string, pathString string, path []string, indexes []uint64, context *walkContext) {
 	fieldName := getFieldName(pathString, path, fm)
 	options := fm.Options()
 	if fm.Type == "text" {
@@ -187,13 +187,13 @@ func (fm *FieldMapping) processString(propertyValueString string, pathString str
 		if dateTimeParser != nil {
 			parsedDateTime, err := dateTimeParser.ParseDateTime(propertyValueString)
 			if err == nil {
-				fm.processTime(parsedDateTime, pathString, path, indexes, context)
+				fm.ProcessTime(parsedDateTime, pathString, path, indexes, context)
 			}
 		}
 	}
 }
 
-func (fm *FieldMapping) processFloat64(propertyValFloat float64, pathString string, path []string, indexes []uint64, context *walkContext) {
+func (fm *FieldMapping) ProcessFloat64(propertyValFloat float64, pathString string, path []string, indexes []uint64, context *walkContext) {
 	fieldName := getFieldName(pathString, path, fm)
 	if fm.Type == "number" {
 		options := fm.Options()
@@ -206,7 +206,7 @@ func (fm *FieldMapping) processFloat64(propertyValFloat float64, pathString stri
 	}
 }
 
-func (fm *FieldMapping) processTime(propertyValueTime time.Time, pathString string, path []string, indexes []uint64, context *walkContext) {
+func (fm *FieldMapping) ProcessTime(propertyValueTime time.Time, pathString string, path []string, indexes []uint64, context *walkContext) {
 	fieldName := getFieldName(pathString, path, fm)
 	if fm.Type == "datetime" {
 		options := fm.Options()
@@ -223,7 +223,7 @@ func (fm *FieldMapping) processTime(propertyValueTime time.Time, pathString stri
 	}
 }
 
-func (fm *FieldMapping) processBoolean(propertyValueBool bool, pathString string, path []string, indexes []uint64, context *walkContext) {
+func (fm *FieldMapping) ProcessBoolean(propertyValueBool bool, pathString string, path []string, indexes []uint64, context *walkContext) {
 	fieldName := getFieldName(pathString, path, fm)
 	if fm.Type == "boolean" {
 		options := fm.Options()
@@ -236,7 +236,7 @@ func (fm *FieldMapping) processBoolean(propertyValueBool bool, pathString string
 	}
 }
 
-func (fm *FieldMapping) processGeoPoint(propertyMightBeGeoPoint interface{}, pathString string, path []string, indexes []uint64, context *walkContext) {
+func (fm *FieldMapping) ProcessGeoPoint(propertyMightBeGeoPoint interface{}, pathString string, path []string, indexes []uint64, context *walkContext) {
 	lon, lat, found := geo.ExtractGeoPoint(propertyMightBeGeoPoint)
 	if found {
 		fieldName := getFieldName(pathString, path, fm)

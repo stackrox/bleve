@@ -435,9 +435,9 @@ func (dm *DocumentMapping) ProcessProperty(property interface{}, path []string, 
 			// index by explicit mapping
 			for _, fieldMapping := range subDocMapping.Fields {
 				if fieldMapping.Type == "geopoint" {
-					fieldMapping.processGeoPoint(property, pathString, path, indexes, context)
+					fieldMapping.ProcessGeoPoint(property, pathString, path, indexes, context)
 				} else {
-					fieldMapping.processString(propertyValueString, pathString, path, indexes, context)
+					fieldMapping.ProcessString(propertyValueString, pathString, path, indexes, context)
 				}
 			}
 		} else if closestDocMapping.Dynamic {
@@ -450,11 +450,11 @@ func (dm *DocumentMapping) ProcessProperty(property interface{}, path []string, 
 				if err != nil {
 					// index as text
 					fieldMapping := newTextFieldMappingDynamic(context.im)
-					fieldMapping.processString(propertyValueString, pathString, path, indexes, context)
+					fieldMapping.ProcessString(propertyValueString, pathString, path, indexes, context)
 				} else {
 					// index as datetime
 					fieldMapping := newDateTimeFieldMappingDynamic(context.im)
-					fieldMapping.processTime(parsedDateTime, pathString, path, indexes, context)
+					fieldMapping.ProcessTime(parsedDateTime, pathString, path, indexes, context)
 				}
 			}
 		}
@@ -469,24 +469,24 @@ func (dm *DocumentMapping) ProcessProperty(property interface{}, path []string, 
 		if subDocMapping != nil {
 			// index by explicit mapping
 			for _, fieldMapping := range subDocMapping.Fields {
-				fieldMapping.processFloat64(propertyValFloat, pathString, path, indexes, context)
+				fieldMapping.ProcessFloat64(propertyValFloat, pathString, path, indexes, context)
 			}
 		} else if closestDocMapping.Dynamic {
 			// automatic indexing behavior
 			fieldMapping := newNumericFieldMappingDynamic(context.im)
-			fieldMapping.processFloat64(propertyValFloat, pathString, path, indexes, context)
+			fieldMapping.ProcessFloat64(propertyValFloat, pathString, path, indexes, context)
 		}
 	case reflect.Bool:
 		propertyValBool := propertyValue.Bool()
 		if subDocMapping != nil {
 			// index by explicit mapping
 			for _, fieldMapping := range subDocMapping.Fields {
-				fieldMapping.processBoolean(propertyValBool, pathString, path, indexes, context)
+				fieldMapping.ProcessBoolean(propertyValBool, pathString, path, indexes, context)
 			}
 		} else if closestDocMapping.Dynamic {
 			// automatic indexing behavior
 			fieldMapping := newBooleanFieldMappingDynamic(context.im)
-			fieldMapping.processBoolean(propertyValBool, pathString, path, indexes, context)
+			fieldMapping.ProcessBoolean(propertyValBool, pathString, path, indexes, context)
 		}
 	case reflect.Struct:
 		switch property := property.(type) {
@@ -495,11 +495,11 @@ func (dm *DocumentMapping) ProcessProperty(property interface{}, path []string, 
 			if subDocMapping != nil {
 				// index by explicit mapping
 				for _, fieldMapping := range subDocMapping.Fields {
-					fieldMapping.processTime(property, pathString, path, indexes, context)
+					fieldMapping.ProcessTime(property, pathString, path, indexes, context)
 				}
 			} else if closestDocMapping.Dynamic {
 				fieldMapping := newDateTimeFieldMappingDynamic(context.im)
-				fieldMapping.processTime(property, pathString, path, indexes, context)
+				fieldMapping.ProcessTime(property, pathString, path, indexes, context)
 			}
 		case encoding.TextMarshaler:
 			txt, err := property.MarshalText()
@@ -507,7 +507,7 @@ func (dm *DocumentMapping) ProcessProperty(property interface{}, path []string, 
 				// index by explicit mapping
 				for _, fieldMapping := range subDocMapping.Fields {
 					if fieldMapping.Type == "text" {
-						fieldMapping.processString(string(txt), pathString, path, indexes, context)
+						fieldMapping.ProcessString(string(txt), pathString, path, indexes, context)
 					}
 				}
 			}
@@ -516,7 +516,7 @@ func (dm *DocumentMapping) ProcessProperty(property interface{}, path []string, 
 			if subDocMapping != nil {
 				for _, fieldMapping := range subDocMapping.Fields {
 					if fieldMapping.Type == "geopoint" {
-						fieldMapping.processGeoPoint(property, pathString, path, indexes, context)
+						fieldMapping.ProcessGeoPoint(property, pathString, path, indexes, context)
 					}
 				}
 			}
@@ -529,7 +529,7 @@ func (dm *DocumentMapping) ProcessProperty(property interface{}, path []string, 
 		if subDocMapping != nil {
 			for _, fieldMapping := range subDocMapping.Fields {
 				if fieldMapping.Type == "geopoint" {
-					fieldMapping.processGeoPoint(property, pathString, path, indexes, context)
+					fieldMapping.ProcessGeoPoint(property, pathString, path, indexes, context)
 				}
 			}
 		}
@@ -556,7 +556,7 @@ func (dm *DocumentMapping) ProcessProperty(property interface{}, path []string, 
 					if err == nil && allFieldsText {
 						txtStr := string(txt)
 						for _, fieldMapping := range subDocMapping.Fields {
-							fieldMapping.processString(txtStr, pathString, path, indexes, context)
+							fieldMapping.ProcessString(txtStr, pathString, path, indexes, context)
 						}
 						return
 					}
