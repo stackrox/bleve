@@ -322,7 +322,7 @@ func (im *IndexMappingImpl) MapDocument(doc *document.Document, data interface{}
 	docType := im.determineType(data)
 	docMapping := im.mappingForType(docType)
 	if docMapping.Enabled {
-		walkContext := im.newWalkContext(doc, docMapping)
+		walkContext := im.NewWalkContext(doc, docMapping)
 		docMapping.walkDocument(data, []string{}, []uint64{}, walkContext)
 
 		// see if the _all field was disabled
@@ -336,15 +336,15 @@ func (im *IndexMappingImpl) MapDocument(doc *document.Document, data interface{}
 	return nil
 }
 
-type walkContext struct {
+type WalkContext struct {
 	doc             *document.Document
 	im              *IndexMappingImpl
 	dm              *DocumentMapping
 	excludedFromAll []string
 }
 
-func (im *IndexMappingImpl) newWalkContext(doc *document.Document, dm *DocumentMapping) *walkContext {
-	return &walkContext{
+func (im *IndexMappingImpl) NewWalkContext(doc *document.Document, dm *DocumentMapping) *WalkContext {
+	return &WalkContext{
 		doc:             doc,
 		im:              im,
 		dm:              dm,
