@@ -34,7 +34,7 @@ func NewCharacterTokenizer(f IsTokenRune) *CharacterTokenizer {
 
 func (c *CharacterTokenizer) Tokenize(input []byte) analysis.TokenStream {
 
-	rv := make(analysis.TokenStream, 0, 1024)
+	rv := make(analysis.TokenStream, 0, 16)
 
 	offset := 0
 	start := 0
