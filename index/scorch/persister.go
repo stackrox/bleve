@@ -258,7 +258,7 @@ func (s *Scorch) pausePersisterForMergerCatchUp(lastPersistedEpoch uint64,
 	// On finding fewer files on disk, persister takes a short pause
 	// for sufficient in-memory segments to pile up for the next
 	// memory merge cum persist loop.
-	if numFilesOnDisk < uint64(po.PersisterNapUnderNumFiles) &&
+	if numFilesOnDisk < po.PersisterNapUnderNumFiles &&
 		po.PersisterNapTimeMSec > 0 && s.paused() == 0 {
 		select {
 		case <-s.closeCh:
