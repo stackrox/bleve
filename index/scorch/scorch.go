@@ -504,6 +504,20 @@ func (s *Scorch) Stats() json.Marshaler {
 	return &s.stats
 }
 
+func (s *Scorch) numFiles(n int) int {
+	if s.path != "" {
+		f, err := os.Open(s.path)
+		if err == nil {
+			defer f.Close()
+			names, err := f.Readdirnames(n)
+			if err == nil {
+				return len(names)
+			}
+		}
+	}
+	return 0
+}
+
 func (s *Scorch) diskFileStats(rootSegmentPaths map[string]struct{}) (uint64,
 	uint64, uint64) {
 	var numFilesOnDisk, numBytesUsedDisk, numBytesOnDiskByRoot uint64
