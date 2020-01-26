@@ -253,12 +253,12 @@ func (s *Scorch) pausePersisterForMergerCatchUp(lastPersistedEpoch uint64,
 	persistWatchers = notifyMergeWatchers(lastPersistedEpoch, persistWatchers)
 
 	// Check the merger lag by counting the segment files on disk,
-	numFilesOnDisk, _, _ := s.diskFileStats(nil)
+	numFilesOnDisk := s.numFiles(po.PersisterNapUnderNumFiles + 1)
 
 	// On finding fewer files on disk, persister takes a short pause
 	// for sufficient in-memory segments to pile up for the next
 	// memory merge cum persist loop.
-	if numFilesOnDisk < uint64(po.PersisterNapUnderNumFiles) &&
+	if numFilesOnDisk < po.PersisterNapUnderNumFiles &&
 		po.PersisterNapTimeMSec > 0 && s.paused() == 0 {
 		select {
 		case <-s.closeCh:
@@ -278,9 +278,9 @@ func (s *Scorch) pausePersisterForMergerCatchUp(lastPersistedEpoch uint64,
 	// Finding too many files on disk could be due to two reasons.
 	// 1. Too many older snapshots awaiting the clean up.
 	// 2. The merger could be lagging behind on merging the disk files.
-	if numFilesOnDisk > uint64(po.PersisterNapUnderNumFiles) {
+	if numFilesOnDisk > po.PersisterNapUnderNumFiles {
 		s.removeOldData()
-		numFilesOnDisk, _, _ = s.diskFileStats(nil)
+		numFilesOnDisk = s.numFiles(po.PersisterNapUnderNumFiles + 1)
 	}
 
 	// Persister pause until the merger catches up to reduce the segment
@@ -288,7 +288,7 @@ func (s *Scorch) pausePersisterForMergerCatchUp(lastPersistedEpoch uint64,
 	// But if there is memory pressure, then skip this sleep maneuvers.
 OUTER:
 	for po.PersisterNapUnderNumFiles > 0 &&
-		numFilesOnDisk >= uint64(po.PersisterNapUnderNumFiles) &&
+		numFilesOnDisk >= po.PersisterNapUnderNumFiles &&
 		lastMergedEpoch < lastPersistedEpoch {
 		atomic.AddUint64(&s.stats.TotPersisterSlowMergerPause, 1)
 
@@ -305,7 +305,7 @@ OUTER:
 		// let the watchers proceed if they lag behind
 		persistWatchers = notifyMergeWatchers(lastPersistedEpoch, persistWatchers)
 
-		numFilesOnDisk, _, _ = s.diskFileStats(nil)
+		numFilesOnDisk = s.numFiles(po.PersisterNapUnderNumFiles + 1)
 	}
 
 	return lastMergedEpoch, persistWatchers
