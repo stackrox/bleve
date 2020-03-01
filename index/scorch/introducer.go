@@ -41,6 +41,20 @@ type persistIntroduction struct {
 	applied   notificationChan
 }
 
+func (i *persistIntroduction) discard() {
+	if i == nil {
+		return
+	}
+
+	for _, s := range i.persisted {
+		if s != nil {
+			// cleanup segments that were opened but not
+			// swapped into the new root
+			_ = s.Close()
+		}
+	}
+}
+
 type epochWatcher struct {
 	epoch    uint64
 	notifyCh notificationChan
@@ -237,6 +251,8 @@ func (s *Scorch) introduceSegment(next *segmentIntroduction) error {
 }
 
 func (s *Scorch) introducePersist(persist *persistIntroduction) {
+	defer persist.discard()
+
 	atomic.AddUint64(&s.stats.TotIntroducePersistBeg, 1)
 	defer atomic.AddUint64(&s.stats.TotIntroducePersistEnd, 1)
 
