@@ -555,7 +555,11 @@ func (s *Scorch) persistSnapshotDirect(snapshot *IndexSnapshot) (err error) {
 			persisted: newSegments,
 			applied:   applied,
 		}
-		defer persist.discard()
+		defer func() {
+			if persist != nil {
+				persist.discard()
+			}
+		}()
 
 		select {
 		case <-s.closeCh:

@@ -42,10 +42,6 @@ type persistIntroduction struct {
 }
 
 func (i *persistIntroduction) discard() {
-	if i == nil {
-		return
-	}
-
 	for _, s := range i.persisted {
 		if s != nil {
 			// cleanup segments that were opened but not
