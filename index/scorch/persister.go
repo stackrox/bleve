@@ -541,15 +541,6 @@ func (s *Scorch) persistSnapshotDirect(snapshot *IndexSnapshot) (err error) {
 	if len(newSegmentPaths) > 0 {
 		// now try to open all the new snapshots
 		newSegments := make(map[uint64]segment.Segment)
-		defer func() {
-			for _, s := range newSegments {
-				if s != nil {
-					// cleanup segments that were opened but not
-					// swapped into the new root
-					_ = s.Close()
-				}
-			}
-		}()
 		for segmentID, path := range newSegmentPaths {
 			newSegments[segmentID], err = s.segPlugin.Open(path)
 			if err != nil {
@@ -557,21 +548,28 @@ func (s *Scorch) persistSnapshotDirect(snapshot *IndexSnapshot) (err error) {
 			}
 		}
 
+		applied := make(notificationChan)
 		persist := &persistIntroduction{
 			persisted: newSegments,
-			applied:   make(notificationChan),
+			applied:   applied,
 		}
+		defer func() {
+			if persist != nil {
+				persist.discard()
+			}
+		}()
 
 		select {
 		case <-s.closeCh:
 			return segment.ErrClosed
 		case s.persists <- persist:
+			persist = nil
 		}
 
 		select {
 		case <-s.closeCh:
 			return segment.ErrClosed
-		case <-persist.applied:
+		case <-applied:
 		}
 	}
 
