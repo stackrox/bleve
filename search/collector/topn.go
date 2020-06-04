@@ -16,6 +16,7 @@ package collector
 
 import (
 	"context"
+	"math"
 	"reflect"
 	"strconv"
 	"time"
@@ -118,9 +119,15 @@ func newTopNCollector(size int, skip int, sort search.SortOrder) *TopNCollector 
 	}
 
 	if size+skip > 10 {
-		hc.store = newStoreHeap(backingSize, func(i, j *search.DocumentMatch) int {
-			return hc.sort.Compare(hc.cachedScoring, hc.cachedDesc, i, j)
-		})
+		if size == math.MaxInt32 {
+			hc.store = newStoreRawSlice(backingSize, func(i, j *search.DocumentMatch) int {
+				return hc.sort.Compare(hc.cachedScoring, hc.cachedDesc, i, j)
+			})
+		} else {
+			hc.store = newStoreHeap(backingSize, func(i, j *search.DocumentMatch) int {
+				return hc.sort.Compare(hc.cachedScoring, hc.cachedDesc, i, j)
+			})
+		}
 	} else {
 		hc.store = newStoreSlice(backingSize, func(i, j *search.DocumentMatch) int {
 			return hc.sort.Compare(hc.cachedScoring, hc.cachedDesc, i, j)

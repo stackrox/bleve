@@ -796,6 +796,12 @@ func BenchmarkTop100of10000Scores(b *testing.B) {
 	}, b)
 }
 
+func BenchmarkTop20000of10000Scores(b *testing.B) {
+	benchHelper(10000, func() search.Collector {
+		return NewTopNCollector(20000, 0, search.SortOrder{&search.SortScore{Desc: true}})
+	}, b)
+}
+
 func BenchmarkTop1000of10000Scores(b *testing.B) {
 	benchHelper(10000, func() search.Collector {
 		return NewTopNCollector(1000, 0, search.SortOrder{&search.SortScore{Desc: true}})
