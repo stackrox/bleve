@@ -28,10 +28,9 @@ import (
 	"github.com/blevesearch/bleve/document"
 	"github.com/blevesearch/bleve/index"
 	"github.com/blevesearch/bleve/index/scorch/segment"
-	"github.com/blevesearch/bleve/index/scorch/segment/zap"
 	"github.com/blevesearch/bleve/index/store"
 	"github.com/blevesearch/bleve/registry"
-	bolt "github.com/etcd-io/bbolt"
+	bolt "go.etcd.io/bbolt"
 )
 
 const Name = "scorch"
@@ -67,7 +66,6 @@ type Scorch struct {
 	persists           chan *persistIntroduction
 	merges             chan *segmentMerge
 	introducerNotifier chan *epochWatcher
-	revertToSnapshots  chan *snapshotReversion
 	persisterNotifier  chan *epochWatcher
 	rootBolt           *bolt.DB
 	asyncTasks         sync.WaitGroup
@@ -78,6 +76,10 @@ type Scorch struct {
 	pauseLock sync.RWMutex
 
 	pauseCount uint64
+
+	forceMergeRequestCh chan *mergerCtrl
+
+	segPlugin segment.Plugin
 }
 
 type internalStats struct {
@@ -101,7 +103,22 @@ func NewScorch(storeName string,
 		nextSnapshotEpoch:    1,
 		closeCh:              make(chan struct{}),
 		ineligibleForRemoval: map[string]bool{},
+		forceMergeRequestCh:  make(chan *mergerCtrl, 1),
+		segPlugin:            defaultSegmentPlugin,
 	}
+
+	forcedSegmentType, forcedSegmentVersion, err := configForceSegmentTypeVersion(config)
+	if err != nil {
+		return nil, err
+	}
+	if forcedSegmentType != "" && forcedSegmentVersion != 0 {
+		err := rv.loadSegmentPlugin(forcedSegmentType,
+			uint32(forcedSegmentVersion))
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	rv.root = &IndexSnapshot{parent: rv, refs: 1, creator: "NewScorch"}
 	ro, ok := config["read_only"].(bool)
 	if ok {
@@ -120,6 +137,23 @@ func NewScorch(storeName string,
 		rv.onAsyncError = RegistryAsyncErrorCallbacks[aecbName]
 	}
 	return rv, nil
+}
+
+// configForceSegmentTypeVersion checks if the caller has requested a
+// specific segment type/version
+func configForceSegmentTypeVersion(config map[string]interface{}) (string, uint32, error) {
+	forcedSegmentVersion, err := parseToInteger(config["forceSegmentVersion"])
+	if err != nil {
+		return "", 0, nil
+	}
+
+	forcedSegmentType, ok := config["forceSegmentType"].(string)
+	if !ok {
+		return "", 0, fmt.Errorf(
+			"forceSegmentVersion set to %d, must also specify forceSegmentType", forcedSegmentVersion)
+	}
+
+	return forcedSegmentType, uint32(forcedSegmentVersion), nil
 }
 
 func (s *Scorch) paused() uint64 {
@@ -163,7 +197,7 @@ func (s *Scorch) Open() error {
 	}
 
 	s.asyncTasks.Add(1)
-	go s.mainLoop()
+	go s.introducerLoop()
 
 	if !s.readOnly && s.path != "" {
 		s.asyncTasks.Add(1)
@@ -221,8 +255,9 @@ func (s *Scorch) openBolt() error {
 	s.persists = make(chan *persistIntroduction)
 	s.merges = make(chan *segmentMerge)
 	s.introducerNotifier = make(chan *epochWatcher, 1)
-	s.revertToSnapshots = make(chan *snapshotReversion)
 	s.persisterNotifier = make(chan *epochWatcher, 1)
+	s.closeCh = make(chan struct{})
+	s.forceMergeRequestCh = make(chan *mergerCtrl, 1)
 
 	if !s.readOnly && s.path != "" {
 		err := s.removeOldZapFiles() // Before persister or merger create any new files.
@@ -263,7 +298,10 @@ func (s *Scorch) Close() (err error) {
 		err = s.rootBolt.Close()
 		s.rootLock.Lock()
 		if s.root != nil {
-			_ = s.root.DecRef()
+			err2 := s.root.DecRef()
+			if err == nil {
+				err = err2
+			}
 		}
 		s.root = nil
 		s.rootLock.Unlock()
@@ -349,7 +387,7 @@ func (s *Scorch) Batch(batch *index.Batch) (err error) {
 	var newSegment segment.Segment
 	var bufBytes uint64
 	if len(analysisResults) > 0 {
-		newSegment, bufBytes, err = zap.AnalysisResultsToSegmentBase(analysisResults, DefaultChunkFactor)
+		newSegment, bufBytes, err = s.segPlugin.New(analysisResults)
 		if err != nil {
 			return err
 		}
@@ -511,8 +549,7 @@ func (s *Scorch) diskFileStats(rootSegmentPaths map[string]struct{}) (uint64,
 func (s *Scorch) rootDiskSegmentsPaths() map[string]struct{} {
 	rv := make(map[string]struct{}, len(s.root.segment))
 	for _, segmentSnapshot := range s.root.segment {
-		switch seg := segmentSnapshot.segment.(type) {
-		case *zap.Segment:
+		if seg, ok := segmentSnapshot.segment.(segment.PersistedSegment); ok {
 			rv[seg.Path()] = struct{}{}
 		}
 	}
@@ -561,6 +598,10 @@ func (s *Scorch) StatsMap() map[string]interface{} {
 }
 
 func (s *Scorch) Analyze(d *document.Document) *index.AnalysisResult {
+	return analyze(d)
+}
+
+func analyze(d *document.Document) *index.AnalysisResult {
 	rv := &index.AnalysisResult{
 		Document: d,
 		Analyzed: make([]analysis.TokenFrequencies, len(d.Fields)+len(d.CompositeFields)),

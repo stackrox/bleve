@@ -17,7 +17,6 @@ package bleve
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"reflect"
 	"strconv"
 	"strings"
@@ -28,6 +27,7 @@ import (
 	"github.com/blevesearch/bleve/analysis/analyzer/custom"
 	"github.com/blevesearch/bleve/analysis/analyzer/keyword"
 	"github.com/blevesearch/bleve/analysis/analyzer/standard"
+	regexp_char_filter "github.com/blevesearch/bleve/analysis/char/regexp"
 	"github.com/blevesearch/bleve/analysis/token/length"
 	"github.com/blevesearch/bleve/analysis/token/lowercase"
 	"github.com/blevesearch/bleve/analysis/token/shingle"
@@ -38,6 +38,7 @@ import (
 	"github.com/blevesearch/bleve/index/upsidedown"
 	"github.com/blevesearch/bleve/mapping"
 	"github.com/blevesearch/bleve/search"
+	"github.com/blevesearch/bleve/search/highlight/highlighter/ansi"
 	"github.com/blevesearch/bleve/search/highlight/highlighter/html"
 	"github.com/blevesearch/bleve/search/query"
 )
@@ -219,7 +220,7 @@ func TestFacetNumericDateRangeRequests(t *testing.T) {
 				Field: "Date_Range_Success_With_StartEnd",
 				Size:  1,
 				DateTimeRanges: []*dateTimeRange{
-					&dateTimeRange{Name: "testName", Start: time.Unix(0, 0), End: time.Now()},
+					{Name: "testName", Start: time.Unix(0, 0), End: time.Now()},
 				},
 			},
 			result: nil,
@@ -229,7 +230,7 @@ func TestFacetNumericDateRangeRequests(t *testing.T) {
 				Field: "Date_Range_Success_With_Start",
 				Size:  1,
 				DateTimeRanges: []*dateTimeRange{
-					&dateTimeRange{Name: "testName", Start: time.Unix(0, 0)},
+					{Name: "testName", Start: time.Unix(0, 0)},
 				},
 			},
 			result: nil,
@@ -239,7 +240,7 @@ func TestFacetNumericDateRangeRequests(t *testing.T) {
 				Field: "Date_Range_Success_With_End",
 				Size:  1,
 				DateTimeRanges: []*dateTimeRange{
-					&dateTimeRange{Name: "testName", End: time.Now()},
+					{Name: "testName", End: time.Now()},
 				},
 			},
 			result: nil,
@@ -249,7 +250,7 @@ func TestFacetNumericDateRangeRequests(t *testing.T) {
 				Field: "Numeric_Range_Success_With_MinMax",
 				Size:  1,
 				NumericRanges: []*numericRange{
-					&numericRange{Name: "testName", Min: &value, Max: &value},
+					{Name: "testName", Min: &value, Max: &value},
 				},
 			},
 			result: nil,
@@ -259,7 +260,7 @@ func TestFacetNumericDateRangeRequests(t *testing.T) {
 				Field: "Numeric_Range_Success_With_Min",
 				Size:  1,
 				NumericRanges: []*numericRange{
-					&numericRange{Name: "testName", Min: &value},
+					{Name: "testName", Min: &value},
 				},
 			},
 			result: nil,
@@ -269,7 +270,7 @@ func TestFacetNumericDateRangeRequests(t *testing.T) {
 				Field: "Numeric_Range_Success_With_Max",
 				Size:  1,
 				NumericRanges: []*numericRange{
-					&numericRange{Name: "testName", Max: &value},
+					{Name: "testName", Max: &value},
 				},
 			},
 			result: nil,
@@ -279,9 +280,9 @@ func TestFacetNumericDateRangeRequests(t *testing.T) {
 				Field: "Date_Range_Missing_Failure",
 				Size:  1,
 				DateTimeRanges: []*dateTimeRange{
-					&dateTimeRange{Name: "testName2", Start: time.Unix(0, 0)},
-					&dateTimeRange{Name: "testName1", End: time.Now()},
-					&dateTimeRange{Name: "testName"},
+					{Name: "testName2", Start: time.Unix(0, 0)},
+					{Name: "testName1", End: time.Now()},
+					{Name: "testName"},
 				},
 			},
 			result: drMissingErr,
@@ -291,9 +292,9 @@ func TestFacetNumericDateRangeRequests(t *testing.T) {
 				Field: "Numeric_Range_Missing_Failure",
 				Size:  1,
 				NumericRanges: []*numericRange{
-					&numericRange{Name: "testName2", Min: &value},
-					&numericRange{Name: "testName1", Max: &value},
-					&numericRange{Name: "testName"},
+					{Name: "testName2", Min: &value},
+					{Name: "testName1", Max: &value},
+					{Name: "testName"},
 				},
 			},
 			result: nrMissingErr,
@@ -303,10 +304,10 @@ func TestFacetNumericDateRangeRequests(t *testing.T) {
 				Field: "Numeric_And_DateRanges_Failure",
 				Size:  1,
 				NumericRanges: []*numericRange{
-					&numericRange{Name: "testName", Max: &value},
+					{Name: "testName", Max: &value},
 				},
 				DateTimeRanges: []*dateTimeRange{
-					&dateTimeRange{Name: "testName", End: time.Now()},
+					{Name: "testName", End: time.Now()},
 				},
 			},
 			result: drNrErr,
@@ -316,8 +317,8 @@ func TestFacetNumericDateRangeRequests(t *testing.T) {
 				Field: "Numeric_Range_Name_Repeat_Failure",
 				Size:  1,
 				NumericRanges: []*numericRange{
-					&numericRange{Name: "testName", Min: &value},
-					&numericRange{Name: "testName", Max: &value},
+					{Name: "testName", Min: &value},
+					{Name: "testName", Max: &value},
 				},
 			},
 			result: nrNameDupErr,
@@ -327,8 +328,8 @@ func TestFacetNumericDateRangeRequests(t *testing.T) {
 				Field: "Date_Range_Name_Repeat_Failure",
 				Size:  1,
 				DateTimeRanges: []*dateTimeRange{
-					&dateTimeRange{Name: "testName", Start: time.Unix(0, 0)},
-					&dateTimeRange{Name: "testName", End: time.Now()},
+					{Name: "testName", Start: time.Unix(0, 0)},
+					{Name: "testName", End: time.Now()},
 				},
 			},
 			result: drNameDupErr,
@@ -445,18 +446,17 @@ func TestNestedBooleanSearchers(t *testing.T) {
 	}
 
 	idxMapping.DefaultAnalyzer = "3xbla"
-	idx, err := New("testidx", idxMapping)
+
+	tmpIndexPath := createTmpIndexPath(t)
+	defer cleanupTmpIndexPath(t, tmpIndexPath)
+
+	idx, err := New(tmpIndexPath, idxMapping)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	defer func() {
 		err = idx.Close()
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		err = os.RemoveAll("testidx")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -557,20 +557,18 @@ func TestNestedBooleanSearchers(t *testing.T) {
 }
 
 func TestNestedBooleanMustNotSearcherUpsidedown(t *testing.T) {
+	tmpIndexPath := createTmpIndexPath(t)
+	defer cleanupTmpIndexPath(t, tmpIndexPath)
+
 	// create an index with default settings
 	idxMapping := NewIndexMapping()
-	idx, err := New("testidx", idxMapping)
+	idx, err := New(tmpIndexPath, idxMapping)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	defer func() {
 		err = idx.Close()
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		err = os.RemoveAll("testidx")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -704,7 +702,10 @@ func TestSearchScorchOverEmptyKeyword(t *testing.T) {
 	imap.DefaultMapping = dmap
 	imap.DefaultAnalyzer = standard.Name
 
-	idx, err := New("testidx", imap)
+	tmpIndexPath := createTmpIndexPath(t)
+	defer cleanupTmpIndexPath(t, tmpIndexPath)
+
+	idx, err := New(tmpIndexPath, imap)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -715,10 +716,6 @@ func TestSearchScorchOverEmptyKeyword(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		err = os.RemoveAll("testidx")
-		if err != nil {
-			t.Fatal(err)
-		}
 		Config.DefaultIndexType = defaultIndexType
 	}()
 
@@ -752,9 +749,12 @@ func TestMultipleNestedBooleanMustNotSearchersOnScorch(t *testing.T) {
 	defaultIndexType := Config.DefaultIndexType
 	Config.DefaultIndexType = scorch.Name
 
+	tmpIndexPath := createTmpIndexPath(t)
+	defer cleanupTmpIndexPath(t, tmpIndexPath)
+
 	// create an index with default settings
 	idxMapping := NewIndexMapping()
-	idx, err := New("testidx", idxMapping)
+	idx, err := New(tmpIndexPath, idxMapping)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -765,10 +765,6 @@ func TestMultipleNestedBooleanMustNotSearchersOnScorch(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		err = os.RemoveAll("testidx")
-		if err != nil {
-			t.Fatal(err)
-		}
 		Config.DefaultIndexType = defaultIndexType
 	}()
 
@@ -894,19 +890,17 @@ func TestMultipleNestedBooleanMustNotSearchersOnScorch(t *testing.T) {
 }
 
 func testBooleanMustNotSearcher(t *testing.T, indexName string) {
+	tmpIndexPath := createTmpIndexPath(t)
+	defer cleanupTmpIndexPath(t, tmpIndexPath)
+
 	im := NewIndexMapping()
-	idx, err := NewUsing("testidx", im, indexName, Config.DefaultKVStore, nil)
+	idx, err := NewUsing(tmpIndexPath, im, indexName, Config.DefaultKVStore, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	defer func() {
 		err = idx.Close()
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		err := os.RemoveAll("testidx")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1019,18 +1013,17 @@ func TestQueryStringEmptyConjunctionSearcher(t *testing.T) {
 }
 
 func TestDisjunctionQueryIncorrectMin(t *testing.T) {
+	tmpIndexPath := createTmpIndexPath(t)
+	defer cleanupTmpIndexPath(t, tmpIndexPath)
+
 	// create an index with default settings
 	idxMapping := NewIndexMapping()
-	idx, err := New("testidx", idxMapping)
+	idx, err := New(tmpIndexPath, idxMapping)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer func() {
 		err = idx.Close()
-		if err != nil {
-			t.Fatal(err)
-		}
-		err = os.RemoveAll("testidx")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1088,18 +1081,16 @@ func TestDisjunctionQueryIncorrectMin(t *testing.T) {
 }
 
 func TestBooleanShouldMinPropagation(t *testing.T) {
-	idx, err := New("testidx", NewIndexMapping())
+	tmpIndexPath := createTmpIndexPath(t)
+	defer cleanupTmpIndexPath(t, tmpIndexPath)
+
+	idx, err := New(tmpIndexPath, NewIndexMapping())
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	defer func() {
 		err = idx.Close()
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		err := os.RemoveAll("testidx")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1158,18 +1149,16 @@ func TestBooleanShouldMinPropagation(t *testing.T) {
 }
 
 func TestDisjunctionMinPropagation(t *testing.T) {
-	idx, err := New("testidx", NewIndexMapping())
+	tmpIndexPath := createTmpIndexPath(t)
+	defer cleanupTmpIndexPath(t, tmpIndexPath)
+
+	idx, err := New(tmpIndexPath, NewIndexMapping())
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	defer func() {
 		err = idx.Close()
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		err := os.RemoveAll("testidx")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1285,18 +1274,17 @@ func TestBooleanMustSingleMatchNone(t *testing.T) {
 	}
 
 	idxMapping.DefaultAnalyzer = "custom1"
-	idx, err := New("testidx", idxMapping)
+
+	tmpIndexPath := createTmpIndexPath(t)
+	defer cleanupTmpIndexPath(t, tmpIndexPath)
+
+	idx, err := New(tmpIndexPath, idxMapping)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	defer func() {
 		err = idx.Close()
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		err = os.RemoveAll("testidx")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1358,18 +1346,17 @@ func TestBooleanMustNotSingleMatchNone(t *testing.T) {
 	}
 
 	idxMapping.DefaultAnalyzer = "custom1"
-	idx, err := New("testidx", idxMapping)
+
+	tmpIndexPath := createTmpIndexPath(t)
+	defer cleanupTmpIndexPath(t, tmpIndexPath)
+
+	idx, err := New(tmpIndexPath, idxMapping)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	defer func() {
 		err = idx.Close()
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		err = os.RemoveAll("testidx")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1417,12 +1404,8 @@ func TestBooleanMustNotSingleMatchNone(t *testing.T) {
 }
 
 func TestBooleanSearchBug1185(t *testing.T) {
-	defer func() {
-		err := os.RemoveAll("testidx")
-		if err != nil {
-			t.Fatal(err)
-		}
-	}()
+	tmpIndexPath := createTmpIndexPath(t)
+	defer cleanupTmpIndexPath(t, tmpIndexPath)
 
 	of := NewTextFieldMapping()
 	of.Analyzer = keyword.Name
@@ -1434,7 +1417,7 @@ func TestBooleanSearchBug1185(t *testing.T) {
 	m := NewIndexMapping()
 	m.DefaultMapping = dm
 
-	idx, err := NewUsing("testidx", m, "scorch", "scorch", nil)
+	idx, err := NewUsing(tmpIndexPath, m, "scorch", "scorch", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1550,13 +1533,16 @@ func TestBooleanSearchBug1185(t *testing.T) {
 }
 
 func TestSearchScoreNone(t *testing.T) {
-	idx, err := NewUsing("testidx", NewIndexMapping(), scorch.Name, Config.DefaultKVStore, nil)
+	tmpIndexPath := createTmpIndexPath(t)
+	defer cleanupTmpIndexPath(t, tmpIndexPath)
+
+	idx, err := NewUsing(tmpIndexPath, NewIndexMapping(), scorch.Name, Config.DefaultKVStore, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	defer func() {
-		err := os.RemoveAll("testidx")
+		err := idx.Close()
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1601,13 +1587,16 @@ func TestGeoDistanceIssue1301(t *testing.T) {
 	shopIndexMapping := NewIndexMapping()
 	shopIndexMapping.DefaultMapping = shopMapping
 
-	idx, err := NewUsing("testidx", shopIndexMapping, scorch.Name, Config.DefaultKVStore, nil)
+	tmpIndexPath := createTmpIndexPath(t)
+	defer cleanupTmpIndexPath(t, tmpIndexPath)
+
+	idx, err := NewUsing(tmpIndexPath, shopIndexMapping, scorch.Name, Config.DefaultKVStore, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	defer func() {
-		err := os.RemoveAll("testidx")
+		err := idx.Close()
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1637,5 +1626,186 @@ func TestGeoDistanceIssue1301(t *testing.T) {
 
 	if sr.Total != 3 {
 		t.Fatalf("Size expected: 3, actual %d\n", sr.Total)
+	}
+}
+
+func TestSearchHighlightingWithRegexpReplacement(t *testing.T) {
+	idxMapping := NewIndexMapping()
+	if err := idxMapping.AddCustomCharFilter(regexp_char_filter.Name, map[string]interface{}{
+		"regexp":  `([a-z])\s+(\d)`,
+		"replace": "ooooo$1-$2",
+		"type":    regexp_char_filter.Name,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := idxMapping.AddCustomAnalyzer("regexp_replace", map[string]interface{}{
+		"type":      custom.Name,
+		"tokenizer": "unicode",
+		"char_filters": []string{
+			regexp_char_filter.Name,
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	idxMapping.DefaultAnalyzer = "regexp_replace"
+	idxMapping.StoreDynamic = true
+
+	tmpIndexPath := createTmpIndexPath(t)
+	defer cleanupTmpIndexPath(t, tmpIndexPath)
+
+	idx, err := NewUsing(tmpIndexPath, idxMapping, scorch.Name, Config.DefaultKVStore, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	defer func() {
+		err := idx.Close()
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	doc := map[string]interface{}{
+		"status": "fool 10",
+	}
+
+	batch := idx.NewBatch()
+	if err = batch.Index("doc", doc); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = idx.Batch(batch); err != nil {
+		t.Fatal(err)
+	}
+
+	query := NewMatchQuery("fool 10")
+	sreq := NewSearchRequest(query)
+	sreq.Fields = []string{"*"}
+	sreq.Highlight = NewHighlightWithStyle(ansi.Name)
+
+	sres, err := idx.Search(sreq)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if sres.Total != 1 {
+		t.Fatalf("Expected 1 hit, got: %v", sres.Total)
+	}
+}
+
+func TestAnalyzerInheritance(t *testing.T) {
+	tests := []struct {
+		name       string
+		mappingStr string
+		doc        map[string]interface{}
+		queryField string
+		queryTerm  string
+	}{
+		{
+			/*
+				index_mapping: keyword
+				default_mapping: ""
+					-> child field (should inherit keyword)
+			*/
+			name: "Child field to inherit index mapping's default analyzer",
+			mappingStr: `{"default_mapping":{"enabled":true,"dynamic":false,"properties":` +
+				`{"city":{"enabled":true,"dynamic":false,"fields":[{"name":"city","type":"text",` +
+				`"store":false,"index":true}]}}},"default_analyzer":"keyword"}`,
+			doc:        map[string]interface{}{"city": "San Francisco"},
+			queryField: "city",
+			queryTerm:  "San Francisco",
+		},
+		{
+			/*
+				index_mapping: standard
+				default_mapping: keyword
+				    -> child field (should inherit keyword)
+			*/
+			name: "Child field to inherit default mapping's default analyzer",
+			mappingStr: `{"default_mapping":{"enabled":true,"dynamic":false,"properties":` +
+				`{"city":{"enabled":true,"dynamic":false,"fields":[{"name":"city","type":"text",` +
+				`"index":true}]}},"default_analyzer":"keyword"},"default_analyzer":"standard"}`,
+			doc:        map[string]interface{}{"city": "San Francisco"},
+			queryField: "city",
+			queryTerm:  "San Francisco",
+		},
+		{
+			/*
+				index_mapping: standard
+				default_mapping: keyword
+				    -> child mapping: ""
+					    -> child field: (should inherit keyword)
+			*/
+			name: "Nested child field to inherit default mapping's default analyzer",
+			mappingStr: `{"default_mapping":{"enabled":true,"dynamic":false,"default_analyzer":` +
+				`"keyword","properties":{"address":{"enabled":true,"dynamic":false,"properties":` +
+				`{"city":{"enabled":true,"dynamic":false,"fields":[{"name":"city","type":"text",` +
+				`"index":true}]}}}}},"default_analyzer":"standard"}`,
+			doc: map[string]interface{}{
+				"address": map[string]interface{}{"city": "San Francisco"},
+			},
+			queryField: "address.city",
+			queryTerm:  "San Francisco",
+		},
+		{
+			/*
+				index_mapping: standard
+				default_mapping: ""
+				    -> child mapping: "keyword"
+					    -> child mapping: ""
+						    -> child field: (should inherit keyword)
+			*/
+			name: "Nested child field to inherit first child mapping's default analyzer",
+			mappingStr: `{"default_mapping":{"enabled":true,"dynamic":false,"properties":` +
+				`{"address":{"enabled":true,"dynamic":false,"default_analyzer":"keyword",` +
+				`"properties":{"state":{"enabled":true,"dynamic":false,"properties":{"city":` +
+				`{"enabled":true,"dynamic":false,"fields":[{"name":"city","type":"text",` +
+				`"store":false,"index":true}]}}}}}}},"default_analyer":"standard"}`,
+			doc: map[string]interface{}{
+				"address": map[string]interface{}{
+					"state": map[string]interface{}{"city": "San Francisco"},
+				},
+			},
+			queryField: "address.state.city",
+			queryTerm:  "San Francisco",
+		},
+	}
+
+	for i := range tests {
+		t.Run(fmt.Sprintf("%s", tests[i].name), func(t *testing.T) {
+			idxMapping := NewIndexMapping()
+			if err := idxMapping.UnmarshalJSON([]byte(tests[i].mappingStr)); err != nil {
+				t.Fatal(err)
+			}
+
+			tmpIndexPath := createTmpIndexPath(t)
+			idx, err := New(tmpIndexPath, idxMapping)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			defer func() {
+				if err := idx.Close(); err != nil {
+					t.Fatal(err)
+				}
+			}()
+
+			if err = idx.Index("doc", tests[i].doc); err != nil {
+				t.Fatal(err)
+			}
+
+			q := NewTermQuery(tests[i].queryTerm)
+			q.SetField(tests[i].queryField)
+
+			res, err := idx.Search(NewSearchRequest(q))
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if len(res.Hits) != 1 {
+				t.Errorf("Unexpected number of hits: %v", len(res.Hits))
+			}
+		})
 	}
 }

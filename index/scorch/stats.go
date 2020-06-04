@@ -82,6 +82,9 @@ type Stats struct {
 	TotFileMergeLoopErr uint64
 	TotFileMergeLoopEnd uint64
 
+	TotFileMergeForceOpsStarted   uint64
+	TotFileMergeForceOpsCompleted uint64
+
 	TotFileMergePlan     uint64
 	TotFileMergePlanErr  uint64
 	TotFileMergePlanNone uint64
@@ -98,10 +101,12 @@ type Stats struct {
 	TotFileSegmentsAtRoot     uint64
 	TotFileMergeWrittenBytes  uint64
 
-	TotFileMergeZapBeg  uint64
-	TotFileMergeZapEnd  uint64
-	TotFileMergeZapTime uint64
-	MaxFileMergeZapTime uint64
+	TotFileMergeZapBeg              uint64
+	TotFileMergeZapEnd              uint64
+	TotFileMergeZapTime             uint64
+	MaxFileMergeZapTime             uint64
+	TotFileMergeZapIntroductionTime uint64
+	MaxFileMergeZapIntroductionTime uint64
 
 	TotFileMergeIntroductions        uint64
 	TotFileMergeIntroductionsDone    uint64
