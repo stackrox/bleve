@@ -17,6 +17,7 @@ package collector
 import (
 	"bytes"
 	"context"
+	"math"
 	"testing"
 
 	"github.com/blevesearch/bleve/index"
@@ -793,6 +794,18 @@ func BenchmarkTop100of50Scores(b *testing.B) {
 func BenchmarkTop100of10000Scores(b *testing.B) {
 	benchHelper(10000, func() search.Collector {
 		return NewTopNCollector(100, 0, search.SortOrder{&search.SortScore{Desc: true}})
+	}, b)
+}
+
+func BenchmarkTopRawSliceof10000Scores(b *testing.B) {
+	benchHelper(40000, func() search.Collector {
+		return NewTopNCollector(math.MaxInt32, 0, search.SortOrder{&search.SortScore{Desc: true}})
+	}, b)
+}
+
+func BenchmarkTopHeapof10000Scores(b *testing.B) {
+	benchHelper(40000, func() search.Collector {
+		return NewTopNCollector(math.MaxInt32-1, 0, search.SortOrder{&search.SortScore{Desc: true}})
 	}, b)
 }
 
