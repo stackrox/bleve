@@ -39,7 +39,7 @@ func (c *collectStoreRawSlice) AddNotExceedingSize(doc *search.DocumentMatch, si
 }
 
 func (c *collectStoreRawSlice) Final(skip int, fixup collectorFixup) (search.DocumentMatchCollection, error) {
-	if skip > len(c.slice) {
+	if skip >= len(c.slice) {
 		return search.DocumentMatchCollection{}, nil
 	}
 	sort.Slice(c.slice, func(i, j int) bool {
