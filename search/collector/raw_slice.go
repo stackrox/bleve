@@ -39,15 +39,15 @@ func (c *collectStoreRawSlice) AddNotExceedingSize(doc *search.DocumentMatch, si
 }
 
 func (c *collectStoreRawSlice) Final(skip int, fixup collectorFixup) (search.DocumentMatchCollection, error) {
-	sort.Slice(c.slice, func(i, j int) bool{
-		return c.compare(c.slice[i], c.slice[j]) < 0
-	})
 	if skip > len(c.slice) {
 		return search.DocumentMatchCollection{}, nil
 	}
-
-	for _, slice := range c.slice[skip:] {
-		err := fixup(slice)
+	sort.Slice(c.slice, func(i, j int) bool {
+		return c.compare(c.slice[i], c.slice[j]) < 0
+	})
+	c.slice = c.slice[skip:]
+	for _, doc := range c.slice {
+		err := fixup(doc)
 		if err != nil {
 			return nil, err
 		}

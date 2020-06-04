@@ -797,15 +797,15 @@ func BenchmarkTop100of10000Scores(b *testing.B) {
 	}, b)
 }
 
-func BenchmarkTopRawSliceof10000Scores(b *testing.B) {
-	benchHelper(40000, func() search.Collector {
-		return NewTopNCollector(math.MaxInt32, 0, search.SortOrder{&search.SortScore{Desc: true}})
+func BenchmarkTopRawSliceof100000Scores(b *testing.B) {
+	benchHelper(100000, func() search.Collector {
+		return NewTopNCollector(math.MaxInt64, 0, search.SortOrder{&search.SortScore{Desc: true}})
 	}, b)
 }
 
-func BenchmarkTopHeapof10000Scores(b *testing.B) {
-	benchHelper(40000, func() search.Collector {
-		return NewTopNCollector(math.MaxInt32-1, 0, search.SortOrder{&search.SortScore{Desc: true}})
+func BenchmarkTopHeapof100000Scores(b *testing.B) {
+	benchHelper(100000, func() search.Collector {
+		return NewTopNCollector(math.MaxInt64-1, 0, search.SortOrder{&search.SortScore{Desc: true}})
 	}, b)
 }
 

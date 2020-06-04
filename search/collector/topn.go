@@ -105,20 +105,17 @@ func newTopNCollector(size int, skip int, sort search.SortOrder) *TopNCollector 
 		backingSize = PreAllocSizeSkipCap + 1
 	}
 
+	compareFunc := func(i, j *search.DocumentMatch) int {
+		return hc.sort.Compare(hc.cachedScoring, hc.cachedDesc, i, j)
+	}
 	if size+skip > 10 {
-		if size == math.MaxInt32 {
-			hc.store = newStoreRawSlice(backingSize, func(i, j *search.DocumentMatch) int {
-				return hc.sort.Compare(hc.cachedScoring, hc.cachedDesc, i, j)
-			})
+		if size == math.MaxInt64 {
+			hc.store = newStoreRawSlice(backingSize, compareFunc)
 		} else {
-			hc.store = newStoreHeap(backingSize, func(i, j *search.DocumentMatch) int {
-				return hc.sort.Compare(hc.cachedScoring, hc.cachedDesc, i, j)
-			})
+			hc.store = newStoreHeap(backingSize, compareFunc)
 		}
 	} else {
-		hc.store = newStoreSlice(backingSize, func(i, j *search.DocumentMatch) int {
-			return hc.sort.Compare(hc.cachedScoring, hc.cachedDesc, i, j)
-		})
+		hc.store = newStoreSlice(backingSize, compareFunc)
 	}
 
 	// these lookups traverse an interface, so do once up-front
