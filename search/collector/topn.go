@@ -16,6 +16,7 @@ package collector
 
 import (
 	"context"
+	"math"
 	"reflect"
 	"time"
 
@@ -99,19 +100,27 @@ func newTopNCollector(size int, skip int, sort search.SortOrder) *TopNCollector 
 	// pre-allocate space on the store to avoid reslicing
 	// unless the size + skip is too large, then cap it
 	// everything should still work, just reslices as necessary
-	backingSize := size + skip + 1
-	if size+skip > PreAllocSizeSkipCap {
+
+	var backingSize int
+	// Check if size + skip would overflow or the original check if size+skip is greater than the cap
+	// then set the backing size to the cap
+	if size >= math.MaxInt64-skip || size+skip > PreAllocSizeSkipCap {
 		backingSize = PreAllocSizeSkipCap + 1
+	} else {
+		backingSize = size + skip + 1
 	}
 
-	if size+skip > 10 {
-		hc.store = newStoreHeap(backingSize, func(i, j *search.DocumentMatch) int {
-			return hc.sort.Compare(hc.cachedScoring, hc.cachedDesc, i, j)
-		})
+	compareFunc := func(i, j *search.DocumentMatch) int {
+		return hc.sort.Compare(hc.cachedScoring, hc.cachedDesc, i, j)
+	}
+	if backingSize-1 > 10 {
+		if size == math.MaxInt64 {
+			hc.store = newStoreRawSlice(backingSize, compareFunc)
+		} else {
+			hc.store = newStoreHeap(backingSize, compareFunc)
+		}
 	} else {
-		hc.store = newStoreSlice(backingSize, func(i, j *search.DocumentMatch) int {
-			return hc.sort.Compare(hc.cachedScoring, hc.cachedDesc, i, j)
-		})
+		hc.store = newStoreSlice(backingSize, compareFunc)
 	}
 
 	// these lookups traverse an interface, so do once up-front
