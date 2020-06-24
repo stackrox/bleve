@@ -135,10 +135,10 @@
 		},
 		{
 			"importpath": "github.com/couchbase/vellum",
-			"repository": "https://github.com/couchbase/vellum",
+			"repository": "https://github.com/m3db/vellum",
 			"vcs": "git",
-			"revision": "dc222902e86f298bfae0b3dec6ba8b9d874ad5f8",
-			"branch": "master",
+			"revision": "a51ace787778e42c2bf4dac00942d37315c10c38",
+			"branch": "ra/fix-pooling",
 			"notests": true
 		}
 	]
