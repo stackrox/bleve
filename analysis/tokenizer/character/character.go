@@ -33,15 +33,7 @@ func NewCharacterTokenizer(f IsTokenRune) *CharacterTokenizer {
 }
 
 func (c *CharacterTokenizer) Tokenize(input []byte) analysis.TokenStream {
-	// a majority of our fields use the whitespace tokenizer so there will generally only be a single token
-	tokenEstimate := 1
-	for _, c := range input {
-		if c == ' ' {
-			tokenEstimate++
-		}
-	}
-
-	rv := make(analysis.TokenStream, 0, tokenEstimate)
+	rv := make(analysis.TokenStream, 0, 1)
 
 	offset := 0
 	start := 0
