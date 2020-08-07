@@ -33,7 +33,7 @@ import (
 	"github.com/blevesearch/bleve/index"
 	"github.com/blevesearch/bleve/index/scorch/segment"
 	"github.com/blevesearch/bleve/index/scorch/segment/zap"
-	bolt go.etcd.io/bbolt"
+	bolt "go.etcd.io/bbolt"
 )
 
 var DefaultChunkFactor uint32 = 1024

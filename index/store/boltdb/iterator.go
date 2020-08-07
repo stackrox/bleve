@@ -17,7 +17,7 @@ package boltdb
 import (
 	"bytes"
 
-	bolt go.etcd.io/bbolt"
+	bolt "go.etcd.io/bbolt"
 )
 
 type Iterator struct {
