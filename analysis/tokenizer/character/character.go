@@ -15,9 +15,18 @@
 package character
 
 import (
+	"fmt"
+	"sync"
 	"unicode/utf8"
 
 	"github.com/blevesearch/bleve/analysis"
+)
+
+var (
+	lock sync.Mutex
+	totalTokens int
+	totalInputs int
+	largestToken int
 )
 
 type IsTokenRune func(r rune) bool
@@ -72,5 +81,18 @@ func (c *CharacterTokenizer) Tokenize(input []byte) analysis.TokenStream {
 			Type:     analysis.AlphaNumeric,
 		})
 	}
+
+	lock.Lock()
+	if len(rv) > largestToken {
+		largestToken = len(rv)
+	}
+	totalInputs++
+	totalTokens += len(rv)
+
+	if totalInputs % 50 == 0 {
+		fmt.Printf("Total inputs: %d. Total Tokens: %d. Avg token size: %0.4f. Largest Token: %d\n", totalInputs, totalTokens, float64(totalInputs)/float64(totalTokens), largestToken)
+	}
+	lock.Unlock()
+
 	return rv
 }
