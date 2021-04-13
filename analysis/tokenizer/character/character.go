@@ -15,7 +15,6 @@
 package character
 
 import (
-	"fmt"
 	"sync"
 	"unicode/utf8"
 
@@ -42,8 +41,7 @@ func NewCharacterTokenizer(f IsTokenRune) *CharacterTokenizer {
 }
 
 func (c *CharacterTokenizer) Tokenize(input []byte) analysis.TokenStream {
-
-	rv := make(analysis.TokenStream, 0, 16)
+	var rv analysis.TokenStream
 
 	offset := 0
 	start := 0
@@ -81,22 +79,6 @@ func (c *CharacterTokenizer) Tokenize(input []byte) analysis.TokenStream {
 			Type:     analysis.AlphaNumeric,
 		})
 	}
-
-	lock.Lock()
-	if len(rv) > largestToken {
-		largestToken = len(rv)
-		fmt.Println("new largest", string(input))
-	}
-	totalInputs++
-	totalTokens += len(rv)
-
-	if totalInputs % 50 == 0 {
-		fmt.Printf("Total inputs: %d. Total Tokens: %d. Avg token size: %0.4f. Largest Token: %d\n", totalInputs, totalTokens, float64(totalInputs)/float64(totalTokens), largestToken)
-	}
-	if len(rv) == 0 {
-		fmt.Println(string(input))
-	}
-	lock.Unlock()
 
 	return rv
 }
