@@ -85,12 +85,16 @@ func (c *CharacterTokenizer) Tokenize(input []byte) analysis.TokenStream {
 	lock.Lock()
 	if len(rv) > largestToken {
 		largestToken = len(rv)
+		fmt.Println("new largest", string(input))
 	}
 	totalInputs++
 	totalTokens += len(rv)
 
 	if totalInputs % 50 == 0 {
 		fmt.Printf("Total inputs: %d. Total Tokens: %d. Avg token size: %0.4f. Largest Token: %d\n", totalInputs, totalTokens, float64(totalInputs)/float64(totalTokens), largestToken)
+	}
+	if len(rv) == 0 {
+		fmt.Println(string(input))
 	}
 	lock.Unlock()
 
