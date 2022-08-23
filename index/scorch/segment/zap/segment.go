@@ -19,7 +19,9 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"log"
 	"os"
+	"runtime"
 	"sync"
 	"unsafe"
 
@@ -63,6 +65,13 @@ func Open(path string) (segment.Segment, error) {
 		path: path,
 		refs: 1,
 	}
+	stackTrace := make([]byte, 4096)
+	_ = runtime.Stack(stackTrace, false)
+	runtime.SetFinalizer(rv, func(s *Segment) {
+		if s.mm != nil {
+			log.Fatalf("Finalizer for segment with active mmap called!Allocation site:\n%s\n", stackTrace)
+		}
+	})
 	rv.SegmentBase.updateSize()
 
 	err = rv.loadConfig()
