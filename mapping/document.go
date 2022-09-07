@@ -345,10 +345,11 @@ func (dm *DocumentMapping) walkDocument(data interface{}, path []string, indexes
 	switch typ.Kind() {
 	case reflect.Map:
 		// FIXME can add support for other map keys in the future
-		keypairs := make([]keypair, 0, len(val.MapKeys()))
+		keypairs := make([]keypair, 0, val.Len())
 		if typ.Key().Kind() == reflect.String {
-			for _, key := range val.MapKeys() {
-				keypairs = append(keypairs, keypair{Key: key.String(), Value: val.MapIndex(key).Interface()})
+			iter := val.MapRange()
+			for iter.Next() {
+				keypairs = append(keypairs, keypair{Key: iter.Key().String(), Value: iter.Value().Interface()})
 			}
 		}
 		sort.Slice(keypairs, func(i, j int) bool {
