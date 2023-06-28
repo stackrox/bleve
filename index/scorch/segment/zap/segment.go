@@ -19,7 +19,9 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"log"
 	"os"
+	"runtime"
 	"sync"
 	"unsafe"
 
@@ -63,6 +65,12 @@ func Open(path string) (segment.Segment, error) {
 		path: path,
 		refs: 1,
 	}
+	runtime.SetFinalizer(rv, func(s *Segment) {
+		if s.mm != nil {
+			log.Println("Finalizer called on segment with active mmap!")
+			_ = s.closeActual()
+		}
+	})
 	rv.SegmentBase.updateSize()
 
 	err = rv.loadConfig()
